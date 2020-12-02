@@ -26,50 +26,37 @@
 /* External Class Implementation                                        */
 /************************************************************************/
 
-Picture::Picture() : pImpl(new Impl(this))
-{
-    Paint::pImpl->method(new PaintMethod<Picture::Impl>(pImpl));
+Picture::Picture() : pImpl(new Impl(this)) {
+  Paint::pImpl->method(new PaintMethod<Picture::Impl>(pImpl));
 }
 
-
-Picture::~Picture()
-{
-    delete(pImpl);
+Picture::~Picture() {
+  delete (pImpl);
 }
 
-
-unique_ptr<Picture> Picture::gen() noexcept
-{
-    return unique_ptr<Picture>(new Picture);
+unique_ptr<Picture> Picture::gen() noexcept {
+  return unique_ptr<Picture>(new Picture);
 }
 
+Result Picture::load(const std::string& path) noexcept {
+  if (path.empty()) return Result::InvalidArguments;
 
-Result Picture::load(const std::string& path) noexcept
-{
-    if (path.empty()) return Result::InvalidArguments;
-
-    return pImpl->load(path);
+  return pImpl->load(path);
 }
 
+Result Picture::load(const char* data, uint32_t size) noexcept {
+  if (!data || size <= 0) return Result::InvalidArguments;
 
-Result Picture::load(const char* data, uint32_t size) noexcept
-{
-    if (!data || size <= 0) return Result::InvalidArguments;
-
-    return pImpl->load(data, size);
+  return pImpl->load(data, size);
 }
 
+Result Picture::load(uint32_t* data, uint32_t w, uint32_t h, bool copy) noexcept {
+  if (!data || w <= 0 || h <= 0) return Result::InvalidArguments;
 
-Result Picture::load(uint32_t* data, uint32_t w, uint32_t h, bool copy) noexcept
-{
-    if (!data || w <= 0 || h <= 0) return Result::InvalidArguments;
-
-    return pImpl->load(data, w, h, copy);
+  return pImpl->load(data, w, h, copy);
 }
 
-
-Result Picture::viewbox(float* x, float* y, float* w, float* h) const noexcept
-{
-    if (pImpl->viewbox(x, y, w, h)) return Result::Success;
-    return Result::InsufficientCondition;
+Result Picture::viewbox(float* x, float* y, float* w, float* h) const noexcept {
+  if (pImpl->viewbox(x, y, w, h)) return Result::Success;
+  return Result::InsufficientCondition;
 }

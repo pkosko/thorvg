@@ -25,51 +25,36 @@
 /* External Class Implementation                                        */
 /************************************************************************/
 
-Canvas::Canvas(RenderMethod *pRenderer):pImpl(new Impl(pRenderer))
-{
+Canvas::Canvas(RenderMethod* pRenderer) : pImpl(new Impl(pRenderer)) {
 }
 
-
-Canvas::~Canvas()
-{
-    delete(pImpl);
+Canvas::~Canvas() {
+  delete (pImpl);
 }
 
-
-Result Canvas::reserve(uint32_t n) noexcept
-{
-    pImpl->paints.reserve(n);
-    return Result::Success;
+Result Canvas::reserve(uint32_t n) noexcept {
+  pImpl->paints.reserve(n);
+  return Result::Success;
 }
 
-
-Result Canvas::push(unique_ptr<Paint> paint) noexcept
-{
-    return pImpl->push(move(paint));
+Result Canvas::push(unique_ptr<Paint> paint) noexcept {
+  return pImpl->push(move(paint));
 }
 
-
-Result Canvas::clear(bool free) noexcept
-{
-    return pImpl->clear(free);
+Result Canvas::clear(bool free) noexcept {
+  return pImpl->clear(free);
 }
 
-
-Result Canvas::draw() noexcept
-{
-    return pImpl->draw();
+Result Canvas::draw() noexcept {
+  return pImpl->draw();
 }
 
-
-Result Canvas::update(Paint* paint) noexcept
-{
-    return pImpl->update(paint);
+Result Canvas::update(Paint* paint) noexcept {
+  return pImpl->update(paint);
 }
 
+Result Canvas::sync() noexcept {
+  if (pImpl->renderer->sync()) return Result::Success;
 
-Result Canvas::sync() noexcept
-{
-    if (pImpl->renderer->sync()) return Result::Success;
-
-    return Result::InsufficientCondition;
+  return Result::InsufficientCondition;
 }

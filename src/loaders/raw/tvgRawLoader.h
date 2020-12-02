@@ -22,22 +22,20 @@
 #ifndef _TVG_RAW_LOADER_H_
 #define _TVG_RAW_LOADER_H_
 
-class RawLoader : public Loader
-{
-public:
-    const uint32_t* content = nullptr;
-    bool copy;
+class RawLoader : public Loader {
+ public:
+  const uint32_t* content = nullptr;
+  bool copy;
 
-    RawLoader();
-    ~RawLoader();
+  RawLoader();
+  ~RawLoader();
 
-    using Loader::open;
-    bool open(const uint32_t* data, uint32_t w, uint32_t h, bool copy) override;
-    bool read() override;
-    bool close() override;
+  using Loader::open;
+  bool open(const uint32_t* data, uint32_t w, uint32_t h, bool copy) override;
+  bool read() override;
+  bool close() override;
 
-    const uint32_t* pixels() override;
+  const uint32_t* pixels() override;
 };
 
-
-#endif //_TVG_RAW_LOADER_H_
+#endif  //_TVG_RAW_LOADER_H_

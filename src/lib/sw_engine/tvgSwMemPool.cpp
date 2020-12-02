@@ -21,7 +21,6 @@
  */
 #include "tvgSwCommon.h"
 
-
 /************************************************************************/
 /* Internal Class Implementation                                        */
 /************************************************************************/
@@ -30,126 +29,111 @@ static SwOutline* outline = nullptr;
 static SwOutline* strokeOutline = nullptr;
 static unsigned allocSize = 0;
 
-
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
-SwOutline* mpoolReqOutline(unsigned idx)
-{
-    return &outline[idx];
+SwOutline* mpoolReqOutline(unsigned idx) {
+  return &outline[idx];
 }
 
-
-void mpoolRetOutline(unsigned idx)
-{
-    outline[idx].cntrsCnt = 0;
-    outline[idx].ptsCnt = 0;
+void mpoolRetOutline(unsigned idx) {
+  outline[idx].cntrsCnt = 0;
+  outline[idx].ptsCnt = 0;
 }
 
-
-SwOutline* mpoolReqStrokeOutline(unsigned idx)
-{
-    return &strokeOutline[idx];
+SwOutline* mpoolReqStrokeOutline(unsigned idx) {
+  return &strokeOutline[idx];
 }
 
-
-void mpoolRetStrokeOutline(unsigned idx)
-{
-    strokeOutline[idx].cntrsCnt = 0;
-    strokeOutline[idx].ptsCnt = 0;
+void mpoolRetStrokeOutline(unsigned idx) {
+  strokeOutline[idx].cntrsCnt = 0;
+  strokeOutline[idx].ptsCnt = 0;
 }
 
+bool mpoolInit(unsigned threads) {
+  if (outline || strokeOutline) return false;
+  if (threads == 0) threads = 1;
 
-bool mpoolInit(unsigned threads)
-{
-    if (outline || strokeOutline) return false;
-    if (threads == 0) threads = 1;
+  outline = static_cast<SwOutline*>(calloc(1, sizeof(SwOutline) * threads));
+  if (!outline) goto err;
 
-    outline = static_cast<SwOutline*>(calloc(1, sizeof(SwOutline) * threads));
-    if (!outline) goto err;
+  strokeOutline = static_cast<SwOutline*>(calloc(1, sizeof(SwOutline) * threads));
+  if (!strokeOutline) goto err;
 
-    strokeOutline = static_cast<SwOutline*>(calloc(1, sizeof(SwOutline) * threads));
-    if (!strokeOutline) goto err;
+  allocSize = threads;
 
-    allocSize = threads;
-
-    return true;
+  return true;
 
 err:
-    if (outline) {
-        free(outline);
-        outline = nullptr;
-    }
+  if (outline) {
+    free(outline);
+    outline = nullptr;
+  }
 
-    if (strokeOutline) {
-        free(strokeOutline);
-        strokeOutline = nullptr;
-    }
-    return false;
+  if (strokeOutline) {
+    free(strokeOutline);
+    strokeOutline = nullptr;
+  }
+  return false;
 }
 
+bool mpoolClear() {
+  SwOutline* p;
 
-bool mpoolClear()
-{
-    SwOutline* p;
+  for (unsigned i = 0; i < allocSize; ++i) {
+    p = &outline[i];
 
-    for (unsigned i = 0; i < allocSize; ++i) {
-
-        p = &outline[i];
-
-        if (p->cntrs) {
-            free(p->cntrs);
-            p->cntrs = nullptr;
-        }
-        if (p->pts) {
-            free(p->pts);
-            p->pts = nullptr;
-        }
-        if (p->types) {
-            free(p->types);
-            p->types = nullptr;
-        }
-        p->cntrsCnt = p->reservedCntrsCnt = 0;
-        p->ptsCnt = p->reservedPtsCnt = 0;
-
-        p = &strokeOutline[i];
-
-        if (p->cntrs) {
-            free(p->cntrs);
-            p->cntrs = nullptr;
-        }
-        if (p->pts) {
-            free(p->pts);
-            p->pts = nullptr;
-        }
-        if (p->types) {
-            free(p->types);
-            p->types = nullptr;
-        }
-        p->cntrsCnt = p->reservedCntrsCnt = 0;
-        p->ptsCnt = p->reservedPtsCnt = 0;
+    if (p->cntrs) {
+      free(p->cntrs);
+      p->cntrs = nullptr;
     }
+    if (p->pts) {
+      free(p->pts);
+      p->pts = nullptr;
+    }
+    if (p->types) {
+      free(p->types);
+      p->types = nullptr;
+    }
+    p->cntrsCnt = p->reservedCntrsCnt = 0;
+    p->ptsCnt = p->reservedPtsCnt = 0;
 
-    return true;
+    p = &strokeOutline[i];
+
+    if (p->cntrs) {
+      free(p->cntrs);
+      p->cntrs = nullptr;
+    }
+    if (p->pts) {
+      free(p->pts);
+      p->pts = nullptr;
+    }
+    if (p->types) {
+      free(p->types);
+      p->types = nullptr;
+    }
+    p->cntrsCnt = p->reservedCntrsCnt = 0;
+    p->ptsCnt = p->reservedPtsCnt = 0;
+  }
+
+  return true;
 }
 
+bool mpoolTerm() {
+  mpoolClear();
 
-bool mpoolTerm()
-{
-    mpoolClear();
+  if (outline) {
+    free(outline);
+    outline = nullptr;
+  }
 
-    if (outline) {
-        free(outline);
-        outline = nullptr;
-    }
+  if (strokeOutline) {
+    free(strokeOutline);
+    strokeOutline = nullptr;
+  }
 
-    if (strokeOutline) {
-        free(strokeOutline);
-        strokeOutline = nullptr;
-    }
+  allocSize = 0;
 
-    allocSize = 0;
-
-    return true;
+  return true;
 }

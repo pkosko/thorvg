@@ -23,128 +23,122 @@
 #define _TVG_PICTURE_IMPL_H_
 
 #include <string>
-#include "tvgPaint.h"
 #include "tvgLoaderMgr.h"
+#include "tvgPaint.h"
 
 /************************************************************************/
 /* Internal Class Implementation                                        */
 /************************************************************************/
 
-struct Picture::Impl
-{
-    unique_ptr<Loader> loader = nullptr;
-    Paint* paint = nullptr;
-    uint32_t *pixels = nullptr;
-    Picture *picture = nullptr;
-    void *edata = nullptr;              //engine data
+struct Picture::Impl {
+  unique_ptr<Loader> loader = nullptr;
+  Paint* paint = nullptr;
+  uint32_t* pixels = nullptr;
+  Picture* picture = nullptr;
+  void* edata = nullptr;  // engine data
 
-    Impl(Picture* p) : picture(p)
-    {
+  Impl(Picture* p) : picture(p) {
+  }
+
+  bool dispose(RenderMethod& renderer) {
+    if (paint) {
+      paint->pImpl->dispose(renderer);
+      delete (paint);
+
+      return true;
+    } else if (pixels) {
+      return renderer.dispose(edata);
     }
+    return false;
+  }
 
-    bool dispose(RenderMethod& renderer)
-    {
-        if (paint) {
-            paint->pImpl->dispose(renderer);
-            delete(paint);
-
-            return true;
+  uint32_t reload() {
+    if (loader) {
+      if (!paint) {
+        auto scene = loader->scene();
+        if (scene) {
+          paint = scene.release();
+          loader->close();
+          if (paint) return RenderUpdateFlag::None;
         }
-        else if (pixels) {
-            return renderer.dispose(edata);
-        }
-        return false;
+      }
+      if (!pixels) {
+        pixels = (uint32_t*)loader->pixels();
+        if (pixels) return RenderUpdateFlag::Image;
+      }
     }
+    return RenderUpdateFlag::None;
+  }
 
-    uint32_t reload()
-    {
-        if (loader) {
-            if (!paint) {
-                auto scene = loader->scene();
-                if (scene) {
-                    paint = scene.release();
-                    loader->close();
-                    if (paint) return RenderUpdateFlag::None;
-                }
-            }
-            if (!pixels) {
-                pixels = (uint32_t*)loader->pixels();
-                if (pixels) return RenderUpdateFlag::Image;
-            }
-        }
-        return RenderUpdateFlag::None;
-    }
+  void* update(RenderMethod& renderer, const RenderTransform* transform, uint32_t opacity,
+               vector<Composite>& compList, RenderUpdateFlag pFlag) {
+    uint32_t flag = reload();
 
-    void* update(RenderMethod &renderer, const RenderTransform* transform, uint32_t opacity, vector<Composite>& compList, RenderUpdateFlag pFlag)
-    {
-        uint32_t flag = reload();
+    if (pixels)
+      edata = renderer.prepare(*picture, edata, pixels, transform, opacity, compList,
+                               static_cast<RenderUpdateFlag>(pFlag | flag));
+    else if (paint)
+      edata = paint->pImpl->update(renderer, transform, opacity, compList,
+                                   static_cast<RenderUpdateFlag>(pFlag | flag));
+    return edata;
+  }
 
-        if (pixels) edata = renderer.prepare(*picture, edata, pixels, transform, opacity, compList, static_cast<RenderUpdateFlag>(pFlag | flag));
-        else if (paint) edata = paint->pImpl->update(renderer, transform, opacity, compList, static_cast<RenderUpdateFlag>(pFlag | flag));
-        return edata;
-    }
+  bool render(RenderMethod& renderer) {
+    if (pixels)
+      return renderer.render(*picture, edata);
+    else if (paint)
+      return paint->pImpl->render(renderer);
+    return false;
+  }
 
-    bool render(RenderMethod &renderer)
-    {
-        if (pixels) return renderer.render(*picture, edata);
-        else if (paint) return paint->pImpl->render(renderer);
-        return false;
-    }
+  bool viewbox(float* x, float* y, float* w, float* h) {
+    if (!loader) return false;
+    if (x) *x = loader->vx;
+    if (y) *y = loader->vy;
+    if (w) *w = loader->vw;
+    if (h) *h = loader->vh;
+    return true;
+  }
 
-    bool viewbox(float* x, float* y, float* w, float* h)
-    {
-        if (!loader) return false;
-        if (x) *x = loader->vx;
-        if (y) *y = loader->vy;
-        if (w) *w = loader->vw;
-        if (h) *h = loader->vh;
-        return true;
-    }
+  bool bounds(float* x, float* y, float* w, float* h) {
+    if (!paint) return false;
+    return paint->pImpl->bounds(x, y, w, h);
+  }
 
-    bool bounds(float* x, float* y, float* w, float* h)
-    {
-        if (!paint) return false;
-        return paint->pImpl->bounds(x, y, w, h);
-    }
+  Result load(const string& path) {
+    if (loader) loader->close();
+    loader = LoaderMgr::loader(path);
+    if (!loader) return Result::NonSupport;
+    if (!loader->read()) return Result::Unknown;
+    return Result::Success;
+  }
 
-    Result load(const string& path)
-    {
-        if (loader) loader->close();
-        loader = LoaderMgr::loader(path);
-        if (!loader) return Result::NonSupport;
-        if (!loader->read()) return Result::Unknown;
-        return Result::Success;
-    }
+  Result load(const char* data, uint32_t size) {
+    if (loader) loader->close();
+    loader = LoaderMgr::loader(data, size);
+    if (!loader) return Result::NonSupport;
+    if (!loader->read()) return Result::Unknown;
+    return Result::Success;
+  }
 
-    Result load(const char* data, uint32_t size)
-    {
-        if (loader) loader->close();
-        loader = LoaderMgr::loader(data, size);
-        if (!loader) return Result::NonSupport;
-        if (!loader->read()) return Result::Unknown;
-        return Result::Success;
-    }
+  Result load(uint32_t* data, uint32_t w, uint32_t h, bool copy) {
+    if (loader) loader->close();
+    loader = LoaderMgr::loader(data, w, h, copy);
+    if (!loader) return Result::NonSupport;
+    return Result::Success;
+  }
 
-    Result load(uint32_t* data, uint32_t w, uint32_t h, bool copy)
-    {
-        if (loader) loader->close();
-        loader = LoaderMgr::loader(data, w, h, copy);
-        if (!loader) return Result::NonSupport;
-        return Result::Success;
-    }
+  Paint* duplicate() {
+    reload();
 
-    Paint* duplicate()
-    {
-        reload();
+    if (!paint) return nullptr;
+    auto ret = Picture::gen();
+    if (!ret) return nullptr;
+    auto dup = ret.get()->pImpl;
+    dup->paint = paint->duplicate();
 
-        if (!paint) return nullptr;
-        auto ret = Picture::gen();
-        if (!ret) return nullptr;
-        auto dup = ret.get()->pImpl;
-        dup->paint = paint->duplicate();
-
-        return ret.release();
-    }
+    return ret.release();
+  }
 };
 
-#endif //_TVG_PICTURE_IMPL_H_
+#endif  //_TVG_PICTURE_IMPL_H_

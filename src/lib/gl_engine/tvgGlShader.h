@@ -25,21 +25,20 @@
 
 #include "tvgGlCommon.h"
 
-class GlShader
-{
-public:
-    static std::shared_ptr<GlShader> gen(const char* vertSrc, const char* fragSrc);
-    ~GlShader();
+class GlShader {
+ public:
+  static std::shared_ptr<GlShader> gen(const char* vertSrc, const char* fragSrc);
+  ~GlShader();
 
-    uint32_t getVertexShader();
-    uint32_t getFragmentShader();
+  uint32_t getVertexShader();
+  uint32_t getFragmentShader();
 
-private:
-    void    createShader(const char* vertSrc, const char* fragSrc);
-    uint32_t complileShader(uint32_t type, char* shaderSrc);
+ private:
+  void createShader(const char* vertSrc, const char* fragSrc);
+  uint32_t complileShader(uint32_t type, char* shaderSrc);
 
-    uint32_t mVtShader;
-    uint32_t mFrShader;
+  uint32_t mVtShader;
+  uint32_t mFrShader;
 };
 
 #endif /* _TVG_GL_SHADER_H_ */

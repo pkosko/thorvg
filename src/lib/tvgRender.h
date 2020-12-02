@@ -25,57 +25,84 @@
 #include <vector>
 #include "tvgCommon.h"
 
-namespace tvg
-{
+namespace tvg {
 
-struct Surface
-{
-    //TODO: Union for multiple types
-    uint32_t* buffer;
-    uint32_t stride;
-    uint32_t w, h;
-    uint32_t cs;
+struct Surface {
+  // TODO: Union for multiple types
+  uint32_t* buffer;
+  uint32_t stride;
+  uint32_t w, h;
+  uint32_t cs;
 };
 
 struct Composite {
-    void* edata;
-    CompositeMethod method;
+  void* edata;
+  CompositeMethod method;
 };
 
-enum RenderUpdateFlag {None = 0, Path = 1, Color = 2, Gradient = 4, Stroke = 8, Transform = 16, Image = 32, All = 64};
-
-struct RenderTransform
-{
-    Matrix m;             //3x3 Matrix Elements
-    float x = 0.0f;
-    float y = 0.0f;
-    float degree = 0.0f;  //rotation degree
-    float scale = 1.0f;   //scale factor
-    bool overriding = false;  //user transform?
-
-    bool update();
-    void override(const Matrix& m);
-
-    RenderTransform();
-    RenderTransform(const RenderTransform* lhs, const RenderTransform* rhs);
+enum RenderUpdateFlag {
+  None = 0,
+  Path = 1,
+  Color = 2,
+  Gradient = 4,
+  Stroke = 8,
+  Transform = 16,
+  Image = 32,
+  All = 64
 };
 
+struct RenderTransform {
+  Matrix m;  // 3x3 Matrix Elements
+  float x = 0.0f;
+  float y = 0.0f;
+  float degree = 0.0f;      // rotation degree
+  float scale = 1.0f;       // scale factor
+  bool overriding = false;  // user transform?
 
-class RenderMethod
-{
-public:
-    virtual ~RenderMethod() {}
-    virtual void* prepare(TVG_UNUSED const Shape& shape, TVG_UNUSED void* data, TVG_UNUSED const RenderTransform* transform, uint32_t opacity, TVG_UNUSED vector<Composite>& compList, TVG_UNUSED RenderUpdateFlag flags) { return nullptr; }
-    virtual void* prepare(TVG_UNUSED const Picture& picture, TVG_UNUSED void* data, TVG_UNUSED uint32_t *buffer, TVG_UNUSED const RenderTransform* transform, TVG_UNUSED uint32_t opacity, TVG_UNUSED vector<Composite>& compList, TVG_UNUSED RenderUpdateFlag flags) { return nullptr; }
-    virtual bool dispose(TVG_UNUSED void *data) { return true; }
-    virtual bool preRender() { return true; }
-    virtual bool render(TVG_UNUSED const Shape& shape, TVG_UNUSED void *data) { return true; }
-    virtual bool render(TVG_UNUSED const Picture& picture, TVG_UNUSED void *data) { return true; }
-    virtual bool postRender() { return true; }
-    virtual bool clear() { return true; }
-    virtual bool sync() { return true; }
+  bool update();
+  void override(const Matrix& m);
+
+  RenderTransform();
+  RenderTransform(const RenderTransform* lhs, const RenderTransform* rhs);
 };
 
+class RenderMethod {
+ public:
+  virtual ~RenderMethod() {
+  }
+  virtual void* prepare(TVG_UNUSED const Shape& shape, TVG_UNUSED void* data,
+                        TVG_UNUSED const RenderTransform* transform, uint32_t opacity,
+                        TVG_UNUSED vector<Composite>& compList, TVG_UNUSED RenderUpdateFlag flags) {
+    return nullptr;
+  }
+  virtual void* prepare(TVG_UNUSED const Picture& picture, TVG_UNUSED void* data,
+                        TVG_UNUSED uint32_t* buffer, TVG_UNUSED const RenderTransform* transform,
+                        TVG_UNUSED uint32_t opacity, TVG_UNUSED vector<Composite>& compList,
+                        TVG_UNUSED RenderUpdateFlag flags) {
+    return nullptr;
+  }
+  virtual bool dispose(TVG_UNUSED void* data) {
+    return true;
+  }
+  virtual bool preRender() {
+    return true;
+  }
+  virtual bool render(TVG_UNUSED const Shape& shape, TVG_UNUSED void* data) {
+    return true;
+  }
+  virtual bool render(TVG_UNUSED const Picture& picture, TVG_UNUSED void* data) {
+    return true;
+  }
+  virtual bool postRender() {
+    return true;
+  }
+  virtual bool clear() {
+    return true;
+  }
+  virtual bool sync() {
+    return true;
+  }
+};
 }
 
-#endif //_TVG_RENDER_H_
+#endif  //_TVG_RENDER_H_

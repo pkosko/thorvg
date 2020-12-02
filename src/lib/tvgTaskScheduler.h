@@ -22,67 +22,58 @@
 #ifndef _TVG_TASK_SCHEDULER_H_
 #define _TVG_TASK_SCHEDULER_H_
 
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 #include "tvgCommon.h"
 
-namespace tvg
-{
+namespace tvg {
 
 struct Task;
 
-struct TaskScheduler
-{
-    static unsigned threads();
-    static void init(unsigned threads);
-    static void term();
-    static void request(Task* task);
+struct TaskScheduler {
+  static unsigned threads();
+  static void init(unsigned threads);
+  static void term();
+  static void request(Task* task);
 };
 
-struct Task
-{
-private:
-    mutex                   mtx;
-    condition_variable      cv;
-    bool                    ready{true};
-    bool                    pending{false};
+struct Task {
+ private:
+  mutex mtx;
+  condition_variable cv;
+  bool ready{true};
+  bool pending{false};
 
-public:
-    virtual ~Task() = default;
+ public:
+  virtual ~Task() = default;
 
-    void done()
-    {
-        if (!pending) return;
+  void done() {
+    if (!pending) return;
 
-        unique_lock<mutex> lock(mtx);
-        while (!ready) cv.wait(lock);
-        pending = false;
-    }
+    unique_lock<mutex> lock(mtx);
+    while (!ready) cv.wait(lock);
+    pending = false;
+  }
 
-protected:
-    virtual void run(unsigned tid) = 0;
+ protected:
+  virtual void run(unsigned tid) = 0;
 
-private:
-    void operator()(unsigned tid)
-    {
-        run(tid);
+ private:
+  void operator()(unsigned tid) {
+    run(tid);
 
-        lock_guard<mutex> lock(mtx);
-        ready = true;
-        cv.notify_one();
-    }
+    lock_guard<mutex> lock(mtx);
+    ready = true;
+    cv.notify_one();
+  }
 
-    void prepare()
-    {
-        ready = false;
-        pending = true;
-    }
+  void prepare() {
+    ready = false;
+    pending = true;
+  }
 
-    friend class TaskSchedulerImpl;
+  friend class TaskSchedulerImpl;
 };
-
-
-
 }
 
-#endif //_TVG_TASK_SCHEDULER_H_
+#endif  //_TVG_TASK_SCHEDULER_H_

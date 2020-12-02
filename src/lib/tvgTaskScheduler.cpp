@@ -19,12 +19,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "tvgTaskScheduler.h"
+#include <atomic>
+#include <condition_variable>
 #include <deque>
 #include <thread>
 #include <vector>
-#include <atomic>
-#include <condition_variable>
-#include "tvgTaskScheduler.h"
 
 /************************************************************************/
 /* Internal Class Implementation                                        */
@@ -33,129 +33,116 @@
 namespace tvg {
 
 struct TaskQueue {
-    deque<Task*>             taskDeque;
-    mutex                    mtx;
-    condition_variable       ready;
-    bool                     done = false;
+  deque<Task*> taskDeque;
+  mutex mtx;
+  condition_variable ready;
+  bool done = false;
 
-    bool tryPop(Task** task)
+  bool tryPop(Task** task) {
+    unique_lock<mutex> lock{mtx, try_to_lock};
+    if (!lock || taskDeque.empty()) return false;
+    *task = taskDeque.front();
+    taskDeque.pop_front();
+
+    return true;
+  }
+
+  bool tryPush(Task* task) {
     {
-        unique_lock<mutex> lock{mtx, try_to_lock};
-        if (!lock || taskDeque.empty()) return false;
-        *task = taskDeque.front();
-        taskDeque.pop_front();
-
-        return true;
+      unique_lock<mutex> lock{mtx, try_to_lock};
+      if (!lock) return false;
+      taskDeque.push_back(task);
     }
 
-    bool tryPush(Task* task)
+    ready.notify_one();
+
+    return true;
+  }
+
+  void complete() {
     {
-        {
-            unique_lock<mutex> lock{mtx, try_to_lock};
-            if (!lock) return false;
-            taskDeque.push_back(task);
-        }
+      unique_lock<mutex> lock{mtx};
+      done = true;
+    }
+    ready.notify_all();
+  }
 
-        ready.notify_one();
+  bool pop(Task** task) {
+    unique_lock<mutex> lock{mtx};
 
-        return true;
+    while (taskDeque.empty() && !done) {
+      ready.wait(lock);
     }
 
-    void complete()
+    if (taskDeque.empty()) return false;
+
+    *task = taskDeque.front();
+    taskDeque.pop_front();
+
+    return true;
+  }
+
+  void push(Task* task) {
     {
-        {
-            unique_lock<mutex> lock{mtx};
-            done = true;
-        }
-        ready.notify_all();
+      unique_lock<mutex> lock{mtx};
+      taskDeque.push_back(task);
     }
 
-    bool pop(Task** task)
-    {
-        unique_lock<mutex> lock{mtx};
-
-        while (taskDeque.empty() && !done) {
-            ready.wait(lock);
-        }
-
-        if (taskDeque.empty()) return false;
-
-        *task = taskDeque.front();
-        taskDeque.pop_front();
-
-        return true;
-    }
-
-    void push(Task* task)
-    {
-        {
-            unique_lock<mutex> lock{mtx};
-            taskDeque.push_back(task);
-        }
-
-        ready.notify_one();
-    }
-
+    ready.notify_one();
+  }
 };
 
+class TaskSchedulerImpl {
+ public:
+  unsigned threadCnt;
+  vector<thread> threads;
+  vector<TaskQueue> taskQueues;
+  atomic<unsigned> idx{0};
 
-class TaskSchedulerImpl
-{
-public:
-    unsigned                       threadCnt;
-    vector<thread>                 threads;
-    vector<TaskQueue>              taskQueues;
-    atomic<unsigned>               idx{0};
+  TaskSchedulerImpl(unsigned threadCnt) : threadCnt(threadCnt), taskQueues(threadCnt) {
+    for (unsigned i = 0; i < threadCnt; ++i) {
+      threads.emplace_back([&, i] { run(i); });
+    }
+  }
 
-    TaskSchedulerImpl(unsigned threadCnt) : threadCnt(threadCnt), taskQueues(threadCnt)
-    {
-        for (unsigned i = 0; i < threadCnt; ++i) {
-            threads.emplace_back([&, i] { run(i); });
+  ~TaskSchedulerImpl() {
+    for (auto& queue : taskQueues) queue.complete();
+    for (auto& thread : threads) thread.join();
+  }
+
+  void run(unsigned i) {
+    Task* task;
+
+    // Thread Loop
+    while (true) {
+      auto success = false;
+      for (unsigned i = 0; i < threadCnt * 2; ++i) {
+        if (taskQueues[(i + i) % threadCnt].tryPop(&task)) {
+          success = true;
+          break;
         }
+      }
+
+      if (!success && !taskQueues[i].pop(&task)) break;
+      (*task)(i);
     }
+  }
 
-    ~TaskSchedulerImpl()
-    {
-        for (auto& queue : taskQueues) queue.complete();
-        for (auto& thread : threads) thread.join();
+  void request(Task* task) {
+    // Async
+    if (threadCnt > 0) {
+      task->prepare();
+      auto i = idx++;
+      for (unsigned n = 0; n < threadCnt; ++n) {
+        if (taskQueues[(i + n) % threadCnt].tryPush(task)) return;
+      }
+      taskQueues[i % threadCnt].push(task);
+      // Sync
+    } else {
+      task->run(0);
     }
-
-    void run(unsigned i)
-    {
-        Task* task;
-
-        //Thread Loop
-        while (true) {
-            auto success = false;
-            for (unsigned i = 0; i < threadCnt * 2; ++i) {
-                if (taskQueues[(i + i) % threadCnt].tryPop(&task)) {
-                    success = true;
-                    break;
-                }
-            }
-
-            if (!success && !taskQueues[i].pop(&task)) break;
-            (*task)(i);
-        }
-    }
-
-    void request(Task* task)
-    {
-        //Async
-        if (threadCnt > 0) {
-            task->prepare();
-            auto i = idx++;
-            for (unsigned n = 0; n < threadCnt; ++n) {
-                if (taskQueues[(i + n) % threadCnt].tryPush(task)) return;
-            }
-            taskQueues[i % threadCnt].push(task);
-        //Sync
-        } else {
-            task->run(0);
-        }
-    }
+  }
 };
-
 }
 
 static TaskSchedulerImpl* inst = nullptr;
@@ -164,29 +151,22 @@ static TaskSchedulerImpl* inst = nullptr;
 /* External Class Implementation                                        */
 /************************************************************************/
 
-void TaskScheduler::init(unsigned threads)
-{
-    if (inst) return;
-    inst = new TaskSchedulerImpl(threads);
+void TaskScheduler::init(unsigned threads) {
+  if (inst) return;
+  inst = new TaskSchedulerImpl(threads);
 }
 
-
-void TaskScheduler::term()
-{
-    if (!inst) return;
-    delete(inst);
-    inst = nullptr;
+void TaskScheduler::term() {
+  if (!inst) return;
+  delete (inst);
+  inst = nullptr;
 }
 
-
-void TaskScheduler::request(Task* task)
-{
-    if (inst) inst->request(task);
+void TaskScheduler::request(Task* task) {
+  if (inst) inst->request(task);
 }
 
-
-unsigned TaskScheduler::threads()
-{
-    if (inst) return inst->threadCnt;
-    return 0;
+unsigned TaskScheduler::threads() {
+  if (inst) return inst->threadCnt;
+  return 0;
 }

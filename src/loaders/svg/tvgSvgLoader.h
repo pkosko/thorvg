@@ -22,34 +22,32 @@
 #ifndef _TVG_SVG_LOADER_H_
 #define _TVG_SVG_LOADER_H_
 
-#include "tvgTaskScheduler.h"
 #include "tvgSvgSceneBuilder.h"
+#include "tvgTaskScheduler.h"
 
-class SvgLoader : public Loader, public Task
-{
-public:
-    string filePath;
-    const char* content = nullptr;
-    uint32_t size = 0;
+class SvgLoader : public Loader, public Task {
+ public:
+  string filePath;
+  const char* content = nullptr;
+  uint32_t size = 0;
 
-    SvgLoaderData loaderData;
-    SvgSceneBuilder builder;
-    unique_ptr<Scene> root;
+  SvgLoaderData loaderData;
+  SvgSceneBuilder builder;
+  unique_ptr<Scene> root;
 
-    SvgLoader();
-    ~SvgLoader();
+  SvgLoader();
+  ~SvgLoader();
 
-    using Loader::open;
-    bool open(const string& path) override;
-    bool open(const char* data, uint32_t size) override;
+  using Loader::open;
+  bool open(const string& path) override;
+  bool open(const char* data, uint32_t size) override;
 
-    bool header();
-    bool read() override;
-    bool close() override;
-    void run(unsigned tid) override;
+  bool header();
+  bool read() override;
+  bool close() override;
+  void run(unsigned tid) override;
 
-    unique_ptr<Scene> scene() override;
+  unique_ptr<Scene> scene() override;
 };
 
-
-#endif //_TVG_SVG_LOADER_H_
+#endif  //_TVG_SVG_LOADER_H_

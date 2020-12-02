@@ -27,70 +27,58 @@
 /* Internal Class Implementation                                        */
 /************************************************************************/
 
-struct LinearGradient::Impl
-{
-    float x1 = 0;
-    float y1 = 0;
-    float x2 = 0;
-    float y2 = 0;
+struct LinearGradient::Impl {
+  float x1 = 0;
+  float y1 = 0;
+  float x2 = 0;
+  float y2 = 0;
 
-    Fill* duplicate()
-    {
-        auto ret = LinearGradient::gen();
-        if (!ret) return nullptr;
+  Fill* duplicate() {
+    auto ret = LinearGradient::gen();
+    if (!ret) return nullptr;
 
-        ret->pImpl->x1 = x1;
-        ret->pImpl->y1 = y1;
-        ret->pImpl->x2 = x2;
-        ret->pImpl->y2 = y2;
+    ret->pImpl->x1 = x1;
+    ret->pImpl->y1 = y1;
+    ret->pImpl->x2 = x2;
+    ret->pImpl->y2 = y2;
 
-        return ret.release();
-    }
+    return ret.release();
+  }
 };
 
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
-LinearGradient::LinearGradient():pImpl(new Impl())
-{
-    _id = FILL_ID_LINEAR;
-    Fill::pImpl->method(new FillDup<LinearGradient::Impl>(pImpl));
+LinearGradient::LinearGradient() : pImpl(new Impl()) {
+  _id = FILL_ID_LINEAR;
+  Fill::pImpl->method(new FillDup<LinearGradient::Impl>(pImpl));
 }
 
-
-LinearGradient::~LinearGradient()
-{
-    delete(pImpl);
+LinearGradient::~LinearGradient() {
+  delete (pImpl);
 }
 
+Result LinearGradient::linear(float x1, float y1, float x2, float y2) noexcept {
+  if (fabsf(x2 - x1) < FLT_EPSILON && fabsf(y2 - y1) < FLT_EPSILON) return Result::InvalidArguments;
 
-Result LinearGradient::linear(float x1, float y1, float x2, float y2) noexcept
-{
-    if (fabsf(x2 - x1) < FLT_EPSILON && fabsf(y2 - y1) < FLT_EPSILON)
-        return Result::InvalidArguments;
+  pImpl->x1 = x1;
+  pImpl->y1 = y1;
+  pImpl->x2 = x2;
+  pImpl->y2 = y2;
 
-    pImpl->x1 = x1;
-    pImpl->y1 = y1;
-    pImpl->x2 = x2;
-    pImpl->y2 = y2;
-
-    return Result::Success;
+  return Result::Success;
 }
 
+Result LinearGradient::linear(float* x1, float* y1, float* x2, float* y2) const noexcept {
+  if (x1) *x1 = pImpl->x1;
+  if (x2) *x2 = pImpl->x2;
+  if (y1) *y1 = pImpl->y1;
+  if (y2) *y2 = pImpl->y2;
 
-Result LinearGradient::linear(float* x1, float* y1, float* x2, float* y2) const noexcept
-{
-    if (x1) *x1 = pImpl->x1;
-    if (x2) *x2 = pImpl->x2;
-    if (y1) *y1 = pImpl->y1;
-    if (y2) *y2 = pImpl->y2;
-
-    return Result::Success;
+  return Result::Success;
 }
 
-
-unique_ptr<LinearGradient> LinearGradient::gen() noexcept
-{
-    return unique_ptr<LinearGradient>(new LinearGradient);
+unique_ptr<LinearGradient> LinearGradient::gen() noexcept {
+  return unique_ptr<LinearGradient>(new LinearGradient);
 }

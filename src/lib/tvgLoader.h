@@ -24,29 +24,37 @@
 
 #include "tvgCommon.h"
 
-namespace tvg
-{
+namespace tvg {
 
-class Loader
-{
-public:
-    //default view box, if any.
-    float vx = 0;
-    float vy = 0;
-    float vw = 0;
-    float vh = 0;
+class Loader {
+ public:
+  // default view box, if any.
+  float vx = 0;
+  float vy = 0;
+  float vw = 0;
+  float vh = 0;
 
-    virtual ~Loader() {}
+  virtual ~Loader() {
+  }
 
-    virtual bool open(const string& path) { /* Not supported */ return false; };
-    virtual bool open(const char* data, uint32_t size) { /* Not supported */ return false; };
-    virtual bool open(const uint32_t* data, uint32_t w, uint32_t h, bool copy) { /* Not supported */ return false; };
-    virtual bool read() = 0;
-    virtual bool close() = 0;
-    virtual const uint32_t* pixels() { return nullptr; };
-    virtual unique_ptr<Scene> scene() { return nullptr; };
+  virtual bool open(const string& path) { /* Not supported */
+    return false;
+  };
+  virtual bool open(const char* data, uint32_t size) { /* Not supported */
+    return false;
+  };
+  virtual bool open(const uint32_t* data, uint32_t w, uint32_t h, bool copy) { /* Not supported */
+    return false;
+  };
+  virtual bool read() = 0;
+  virtual bool close() = 0;
+  virtual const uint32_t* pixels() {
+    return nullptr;
+  };
+  virtual unique_ptr<Scene> scene() {
+    return nullptr;
+  };
 };
-
 }
 
-#endif //_TVG_LOADER_H_
+#endif  //_TVG_LOADER_H_

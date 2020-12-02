@@ -25,20 +25,19 @@
 
 #include "tvgSvgLoaderCommon.h"
 
-class SvgSceneBuilder
-{
-private:
-    struct {
-        int x, y;
-        uint32_t w, h;
-    } viewBox = {0, 0, 0, 0};
-    bool     preserveAspect = false;
+class SvgSceneBuilder {
+ private:
+  struct {
+    int x, y;
+    uint32_t w, h;
+  } viewBox = {0, 0, 0, 0};
+  bool preserveAspect = false;
 
-public:
-    SvgSceneBuilder();
-    ~SvgSceneBuilder();
+ public:
+  SvgSceneBuilder();
+  ~SvgSceneBuilder();
 
-    unique_ptr<Scene> build(SvgNode* node);
+  unique_ptr<Scene> build(SvgNode* node);
 };
 
-#endif //_TVG_SVG_SCENE_BUILDER_H_
+#endif  //_TVG_SVG_SCENE_BUILDER_H_

@@ -26,57 +26,53 @@
 #include <cstring>
 #include "tvgCommon.h"
 
-template<typename T>
-struct DuplicateMethod
-{
-    virtual ~DuplicateMethod() {}
-    virtual T* duplicate() = 0;
+template <typename T>
+struct DuplicateMethod {
+  virtual ~DuplicateMethod() {
+  }
+  virtual T* duplicate() = 0;
 };
 
-template<class T>
-struct FillDup : DuplicateMethod<Fill>
-{
-    T* inst = nullptr;
+template <class T>
+struct FillDup : DuplicateMethod<Fill> {
+  T* inst = nullptr;
 
-    FillDup(T* _inst) : inst(_inst) {}
-    ~FillDup() {}
+  FillDup(T* _inst) : inst(_inst) {
+  }
+  ~FillDup() {
+  }
 
-    Fill* duplicate() override
-    {
-        return inst->duplicate();
-    }
+  Fill* duplicate() override {
+    return inst->duplicate();
+  }
 };
 
-struct Fill::Impl
-{
-    ColorStop* colorStops = nullptr;
-    uint32_t cnt = 0;
-    FillSpread spread;
-    DuplicateMethod<Fill>* dup = nullptr;
+struct Fill::Impl {
+  ColorStop* colorStops = nullptr;
+  uint32_t cnt = 0;
+  FillSpread spread;
+  DuplicateMethod<Fill>* dup = nullptr;
 
-    ~Impl()
-    {
-        if (dup) delete(dup);
-        if (colorStops) free(colorStops);
-    }
+  ~Impl() {
+    if (dup) delete (dup);
+    if (colorStops) free(colorStops);
+  }
 
-    void method(DuplicateMethod<Fill>* dup)
-    {
-        this->dup = dup;
-    }
+  void method(DuplicateMethod<Fill>* dup) {
+    this->dup = dup;
+  }
 
-    Fill* duplicate()
-    {
-        auto ret = dup->duplicate();
-        if (!ret) return nullptr;
+  Fill* duplicate() {
+    auto ret = dup->duplicate();
+    if (!ret) return nullptr;
 
-        ret->pImpl->cnt = cnt;
-        ret->pImpl->spread = spread;
-        ret->pImpl->colorStops = static_cast<ColorStop*>(malloc(sizeof(ColorStop) * cnt));
-        memcpy(ret->pImpl->colorStops, colorStops, sizeof(ColorStop) * cnt);
+    ret->pImpl->cnt = cnt;
+    ret->pImpl->spread = spread;
+    ret->pImpl->colorStops = static_cast<ColorStop*>(malloc(sizeof(ColorStop) * cnt));
+    memcpy(ret->pImpl->colorStops, colorStops, sizeof(ColorStop) * cnt);
 
-        return ret;
-    }
+    return ret;
+  }
 };
 
 #endif  //_TVG_FILL_H_

@@ -28,4 +28,4 @@
 
 tuple<vector<tvg::PathCommand>, vector<tvg::Point>> svgPathToTvgPath(const char* svg_path_data);
 
-#endif //_TVG_SVG_PATH_H_
+#endif  //_TVG_SVG_PATH_H_

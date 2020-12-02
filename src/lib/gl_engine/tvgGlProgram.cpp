@@ -20,9 +20,8 @@
  * SOFTWARE.
  */
 
-#include <iostream>
 #include "tvgGlProgram.h"
-
+#include <iostream>
 
 /************************************************************************/
 /* Internal Class Implementation                                        */
@@ -30,147 +29,108 @@
 
 uint32_t GlProgram::mCurrentProgram = 0;
 
-
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
-unique_ptr<GlProgram> GlProgram::gen(std::shared_ptr<GlShader> shader)
-{
-    return make_unique<GlProgram>(shader);
+unique_ptr<GlProgram> GlProgram::gen(std::shared_ptr<GlShader> shader) {
+  return make_unique<GlProgram>(shader);
 }
 
-
-GlProgram::GlProgram(std::shared_ptr<GlShader> shader)
-{
-    linkProgram(shader);
+GlProgram::GlProgram(std::shared_ptr<GlShader> shader) {
+  linkProgram(shader);
 }
 
+GlProgram::~GlProgram() {
+  if (mCurrentProgram == mProgramObj) {
+    unload();
+  }
+  glDeleteProgram(mProgramObj);
+}
 
-GlProgram::~GlProgram()
-{
-    if (mCurrentProgram == mProgramObj)
-    {
-        unload();
+void GlProgram::load() {
+  if (mCurrentProgram == mProgramObj) {
+    return;
+  }
+
+  mCurrentProgram = mProgramObj;
+  GL_CHECK(glUseProgram(mProgramObj));
+}
+
+void GlProgram::unload() {
+  mCurrentProgram = 0;
+}
+
+int32_t GlProgram::getAttributeLocation(const char* name) {
+  GL_CHECK(int32_t location = glGetAttribLocation(mCurrentProgram, name));
+  return location;
+}
+
+int32_t GlProgram::getUniformLocation(const char* name) {
+  GL_CHECK(int32_t location = glGetUniformLocation(mCurrentProgram, name));
+  return location;
+}
+
+void GlProgram::setUniform1Value(int32_t location, int count, const int* values) {
+  GL_CHECK(glUniform1iv(location, count, values));
+}
+
+void GlProgram::setUniform2Value(int32_t location, int count, const int* values) {
+  GL_CHECK(glUniform2iv(location, count, values));
+}
+
+void GlProgram::setUniform3Value(int32_t location, int count, const int* values) {
+  GL_CHECK(glUniform3iv(location, count, values));
+}
+
+void GlProgram::setUniform4Value(int32_t location, int count, const int* values) {
+  GL_CHECK(glUniform4iv(location, count, values));
+}
+
+void GlProgram::setUniform1Value(int32_t location, int count, const float* values) {
+  GL_CHECK(glUniform1fv(location, count, values));
+}
+
+void GlProgram::setUniform2Value(int32_t location, int count, const float* values) {
+  GL_CHECK(glUniform2fv(location, count, values));
+}
+
+void GlProgram::setUniform3Value(int32_t location, int count, const float* values) {
+  GL_CHECK(glUniform3fv(location, count, values));
+}
+
+void GlProgram::setUniform4Value(int32_t location, int count, const float* values) {
+  GL_CHECK(glUniform4fv(location, count, values));
+}
+
+void GlProgram::linkProgram(std::shared_ptr<GlShader> shader) {
+  GLint linked;
+
+  // Create the program object
+  uint32_t progObj = glCreateProgram();
+  assert(progObj);
+
+  glAttachShader(progObj, shader->getVertexShader());
+  glAttachShader(progObj, shader->getFragmentShader());
+
+  // Link the program
+  glLinkProgram(progObj);
+
+  // Check the link status
+  glGetProgramiv(progObj, GL_LINK_STATUS, &linked);
+
+  if (!linked) {
+    GLint infoLen = 0;
+    glGetProgramiv(progObj, GL_INFO_LOG_LENGTH, &infoLen);
+    if (infoLen > 0) {
+      char* infoLog = new char[infoLen];
+      glGetProgramInfoLog(progObj, infoLen, NULL, infoLog);
+      std::cout << "Error linking shader: " << infoLog << std::endl;
+      delete[] infoLog;
     }
-    glDeleteProgram(mProgramObj);
+    glDeleteProgram(progObj);
+    progObj = 0;
+    assert(0);
+  }
+  mProgramObj = progObj;
 }
-
-
-void GlProgram::load()
-{
-    if (mCurrentProgram == mProgramObj)
-    {
-        return;
-    }
-
-    mCurrentProgram = mProgramObj;
-    GL_CHECK(glUseProgram(mProgramObj));
-
-}
-
-
-void GlProgram::unload()
-{
-    mCurrentProgram = 0;
-}
-
-
-int32_t GlProgram::getAttributeLocation(const char* name)
-{
-    GL_CHECK(int32_t location = glGetAttribLocation(mCurrentProgram, name));
-    return location;
-}
-
-
-int32_t GlProgram::getUniformLocation(const char* name)
-{
-    GL_CHECK(int32_t location = glGetUniformLocation(mCurrentProgram, name));
-    return location;
-}
-
-
-void GlProgram::setUniform1Value(int32_t location, int count, const int* values)
-{
-    GL_CHECK(glUniform1iv(location, count, values));
-}
-
-
-void GlProgram::setUniform2Value(int32_t location, int count, const int* values)
-{
-    GL_CHECK(glUniform2iv(location, count, values));
-}
-
-
-void GlProgram::setUniform3Value(int32_t location, int count, const int* values)
-{
-    GL_CHECK(glUniform3iv(location, count, values));
-}
-
-
-void GlProgram::setUniform4Value(int32_t location, int count, const int* values)
-{
-    GL_CHECK(glUniform4iv(location, count, values));
-}
-
-
-void GlProgram::setUniform1Value(int32_t location, int count, const float* values)
-{
-    GL_CHECK(glUniform1fv(location, count, values));
-}
-
-
-void GlProgram::setUniform2Value(int32_t location, int count, const float* values)
-{
-    GL_CHECK(glUniform2fv(location, count, values));
-}
-
-
-void GlProgram::setUniform3Value(int32_t location, int count, const float* values)
-{
-    GL_CHECK(glUniform3fv(location, count, values));
-}
-
-
-void GlProgram::setUniform4Value(int32_t location, int count, const float* values)
-{
-    GL_CHECK(glUniform4fv(location, count, values));
-}
-
-
-void GlProgram::linkProgram(std::shared_ptr<GlShader> shader)
-{
-    GLint linked;
-
-    // Create the program object
-    uint32_t progObj = glCreateProgram();
-    assert(progObj);
-
-    glAttachShader(progObj, shader->getVertexShader());
-    glAttachShader(progObj, shader->getFragmentShader());
-
-    // Link the program
-    glLinkProgram(progObj);
-
-    // Check the link status
-    glGetProgramiv(progObj, GL_LINK_STATUS, &linked);
-
-    if (!linked)
-    {
-        GLint infoLen = 0;
-        glGetProgramiv(progObj, GL_INFO_LOG_LENGTH, &infoLen);
-        if (infoLen > 0)
-        {
-            char* infoLog = new char[infoLen];
-            glGetProgramInfoLog(progObj, infoLen, NULL, infoLog);
-            std::cout << "Error linking shader: " << infoLog << std::endl;
-            delete[] infoLog;
-
-        }
-        glDeleteProgram(progObj);
-        progObj = 0;
-        assert(0);
-    }
-    mProgramObj = progObj;
-}
-

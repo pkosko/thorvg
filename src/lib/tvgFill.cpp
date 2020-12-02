@@ -25,67 +25,54 @@
 /* Internal Class Implementation                                        */
 /************************************************************************/
 
-
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
-Fill::Fill():pImpl(new Impl())
-{
+Fill::Fill() : pImpl(new Impl()) {
 }
 
-
-Fill::~Fill()
-{
-    delete(pImpl);
+Fill::~Fill() {
+  delete (pImpl);
 }
 
-
-Result Fill::colorStops(const ColorStop* colorStops, uint32_t cnt) noexcept
-{
-    if (cnt == 0) {
-        if (pImpl->colorStops) {
-            free(pImpl->colorStops);
-            pImpl->colorStops = nullptr;
-            pImpl->cnt = cnt;
-        }
-        return Result::Success;
+Result Fill::colorStops(const ColorStop* colorStops, uint32_t cnt) noexcept {
+  if (cnt == 0) {
+    if (pImpl->colorStops) {
+      free(pImpl->colorStops);
+      pImpl->colorStops = nullptr;
+      pImpl->cnt = cnt;
     }
-
-    if (pImpl->cnt != cnt) {
-        pImpl->colorStops = static_cast<ColorStop*>(realloc(pImpl->colorStops, cnt * sizeof(ColorStop)));
-    }
-
-    pImpl->cnt = cnt;
-    memcpy(pImpl->colorStops, colorStops, cnt * sizeof(ColorStop));
-
     return Result::Success;
+  }
+
+  if (pImpl->cnt != cnt) {
+    pImpl->colorStops =
+        static_cast<ColorStop*>(realloc(pImpl->colorStops, cnt * sizeof(ColorStop)));
+  }
+
+  pImpl->cnt = cnt;
+  memcpy(pImpl->colorStops, colorStops, cnt * sizeof(ColorStop));
+
+  return Result::Success;
 }
 
+uint32_t Fill::colorStops(const ColorStop** colorStops) const noexcept {
+  if (colorStops) *colorStops = pImpl->colorStops;
 
-uint32_t Fill::colorStops(const ColorStop** colorStops) const noexcept
-{
-    if (colorStops) *colorStops = pImpl->colorStops;
-
-    return pImpl->cnt;
+  return pImpl->cnt;
 }
 
+Result Fill::spread(FillSpread s) noexcept {
+  pImpl->spread = s;
 
-Result Fill::spread(FillSpread s) noexcept
-{
-    pImpl->spread = s;
-
-    return Result::Success;
+  return Result::Success;
 }
 
-
-FillSpread Fill::spread() const noexcept
-{
-    return pImpl->spread;
+FillSpread Fill::spread() const noexcept {
+  return pImpl->spread;
 }
 
-
-Fill* Fill::duplicate() const noexcept
-{
-    return pImpl->duplicate();
+Fill* Fill::duplicate() const noexcept {
+  return pImpl->duplicate();
 }

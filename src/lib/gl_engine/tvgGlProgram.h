@@ -26,32 +26,29 @@
 #include <map>
 #include "tvgGlShader.h"
 
-class GlProgram
-{
-public:
-    static std::unique_ptr<GlProgram> gen(std::shared_ptr<GlShader> shader);
-    GlProgram(std::shared_ptr<GlShader> shader);
-    ~GlProgram();
+class GlProgram {
+ public:
+  static std::unique_ptr<GlProgram> gen(std::shared_ptr<GlShader> shader);
+  GlProgram(std::shared_ptr<GlShader> shader);
+  ~GlProgram();
 
-    void load();
-    static void unload();
-    int32_t getAttributeLocation(const char* name);
-    int32_t getUniformLocation(const char* name);
-    void setUniform1Value(int32_t location, int count, const int* values);
-    void setUniform2Value(int32_t location, int count, const int* values);
-    void setUniform3Value(int32_t location, int count, const int* values);
-    void setUniform4Value(int32_t location, int count, const int* values);
-    void setUniform1Value(int32_t location, int count, const float* values);
-    void setUniform2Value(int32_t location, int count, const float* values);
-    void setUniform3Value(int32_t location, int count, const float* values);
-    void setUniform4Value(int32_t location, int count, const float* values);
+  void load();
+  static void unload();
+  int32_t getAttributeLocation(const char* name);
+  int32_t getUniformLocation(const char* name);
+  void setUniform1Value(int32_t location, int count, const int* values);
+  void setUniform2Value(int32_t location, int count, const int* values);
+  void setUniform3Value(int32_t location, int count, const int* values);
+  void setUniform4Value(int32_t location, int count, const int* values);
+  void setUniform1Value(int32_t location, int count, const float* values);
+  void setUniform2Value(int32_t location, int count, const float* values);
+  void setUniform3Value(int32_t location, int count, const float* values);
+  void setUniform4Value(int32_t location, int count, const float* values);
 
-private:
-
-    void linkProgram(std::shared_ptr<GlShader> shader);
-    uint32_t mProgramObj;
-    static uint32_t mCurrentProgram;
-
+ private:
+  void linkProgram(std::shared_ptr<GlShader> shader);
+  uint32_t mProgramObj;
+  static uint32_t mCurrentProgram;
 };
 
 #endif /* _TVG_GL_PROGRAM_H_ */

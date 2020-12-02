@@ -19,102 +19,94 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "tvgRender.h"
 #include <float.h>
 #include <math.h>
-#include "tvgRender.h"
 
 /************************************************************************/
 /* Internal Class Implementation                                        */
 /************************************************************************/
 
-
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
-void RenderTransform::override(const Matrix& m)
-{
-    this->m = m;
+void RenderTransform::override(const Matrix& m) {
+  this->m = m;
 
-    if (m.e11 == 0.0f && m.e12 == 0.0f && m.e13 == 0.0f &&
-        m.e21 == 0.0f && m.e22 == 0.0f && m.e23 == 0.0f &&
-        m.e31 == 0.0f && m.e32 == 0.0f && m.e33 == 0.0f) {
-        overriding = false;
-    } else overriding = true;
+  if (m.e11 == 0.0f && m.e12 == 0.0f && m.e13 == 0.0f && m.e21 == 0.0f && m.e22 == 0.0f &&
+      m.e23 == 0.0f && m.e31 == 0.0f && m.e32 == 0.0f && m.e33 == 0.0f) {
+    overriding = false;
+  } else
+    overriding = true;
 }
 
+bool RenderTransform::update() {
+  constexpr auto PI = 3.141592f;
 
-bool RenderTransform::update()
-{
-    constexpr auto PI = 3.141592f;
+  if (overriding) return true;
 
-    if (overriding) return true;
+  // Init Status
+  if (fabsf(x) <= FLT_EPSILON && fabsf(y) <= FLT_EPSILON && fabsf(degree) <= FLT_EPSILON &&
+      fabsf(scale - 1) <= FLT_EPSILON) {
+    return false;
+  }
 
-    //Init Status
-    if (fabsf(x) <= FLT_EPSILON && fabsf(y) <= FLT_EPSILON &&
-        fabsf(degree) <= FLT_EPSILON && fabsf(scale - 1) <= FLT_EPSILON) {
-        return false;
-    }
+  // identity
+  m.e11 = 1.0f;
+  m.e12 = 0.0f;
+  m.e13 = 0.0f;
+  m.e21 = 0.0f;
+  m.e22 = 1.0f;
+  m.e23 = 0.0f;
+  m.e31 = 0.0f;
+  m.e32 = 0.0f;
+  m.e33 = 1.0f;
 
-    //identity
-    m.e11 = 1.0f;
-    m.e12 = 0.0f;
-    m.e13 = 0.0f;
-    m.e21 = 0.0f;
-    m.e22 = 1.0f;
-    m.e23 = 0.0f;
-    m.e31 = 0.0f;
-    m.e32 = 0.0f;
-    m.e33 = 1.0f;
+  // scale
+  m.e11 *= scale;
+  m.e22 *= scale;
 
-    //scale
-    m.e11 *= scale;
-    m.e22 *= scale;
+  // rotation
+  if (fabsf(degree) > FLT_EPSILON) {
+    auto radian = degree / 180.0f * PI;
+    auto cosVal = cosf(radian);
+    auto sinVal = sinf(radian);
 
-    //rotation
-    if (fabsf(degree) > FLT_EPSILON) {
-        auto radian = degree / 180.0f * PI;
-        auto cosVal = cosf(radian);
-        auto sinVal = sinf(radian);
+    auto t11 = m.e11 * cosVal + m.e12 * sinVal;
+    auto t12 = m.e11 * -sinVal + m.e12 * cosVal;
+    auto t21 = m.e21 * cosVal + m.e22 * sinVal;
+    auto t22 = m.e21 * -sinVal + m.e22 * cosVal;
+    auto t13 = m.e13 * cosVal + m.e23 * sinVal;
+    auto t23 = m.e13 * -sinVal + m.e23 * cosVal;
 
-        auto t11 = m.e11 * cosVal + m.e12 * sinVal;
-        auto t12 = m.e11 * -sinVal + m.e12 * cosVal;
-        auto t21 = m.e21 * cosVal + m.e22 * sinVal;
-        auto t22 = m.e21 * -sinVal + m.e22 * cosVal;
-        auto t13 = m.e13 * cosVal + m.e23 * sinVal;
-        auto t23 = m.e13 * -sinVal + m.e23 * cosVal;
+    m.e11 = t11;
+    m.e12 = t12;
+    m.e21 = t21;
+    m.e22 = t22;
+    m.e13 = t13;
+    m.e23 = t23;
+  }
 
-        m.e11 = t11;
-        m.e12 = t12;
-        m.e21 = t21;
-        m.e22 = t22;
-        m.e13 = t13;
-        m.e23 = t23;
-    }
+  m.e13 += x;
+  m.e23 += y;
 
-    m.e13 += x;
-    m.e23 += y;
-
-    return true;
+  return true;
 }
 
-
-RenderTransform::RenderTransform()
-{
+RenderTransform::RenderTransform() {
 }
 
+RenderTransform::RenderTransform(const RenderTransform* lhs, const RenderTransform* rhs) {
+  m.e11 = lhs->m.e11 * rhs->m.e11 + lhs->m.e12 * rhs->m.e21 + lhs->m.e13 * rhs->m.e31;
+  m.e12 = lhs->m.e11 * rhs->m.e12 + lhs->m.e12 * rhs->m.e22 + lhs->m.e13 * rhs->m.e32;
+  m.e13 = lhs->m.e11 * rhs->m.e13 + lhs->m.e12 * rhs->m.e23 + lhs->m.e13 * rhs->m.e33;
 
-RenderTransform::RenderTransform(const RenderTransform* lhs, const RenderTransform* rhs)
-{
-    m.e11 = lhs->m.e11 * rhs->m.e11 + lhs->m.e12 * rhs->m.e21 + lhs->m.e13 * rhs->m.e31;
-    m.e12 = lhs->m.e11 * rhs->m.e12 + lhs->m.e12 * rhs->m.e22 + lhs->m.e13 * rhs->m.e32;
-    m.e13 = lhs->m.e11 * rhs->m.e13 + lhs->m.e12 * rhs->m.e23 + lhs->m.e13 * rhs->m.e33;
+  m.e21 = lhs->m.e21 * rhs->m.e11 + lhs->m.e22 * rhs->m.e21 + lhs->m.e23 * rhs->m.e31;
+  m.e22 = lhs->m.e21 * rhs->m.e12 + lhs->m.e22 * rhs->m.e22 + lhs->m.e23 * rhs->m.e32;
+  m.e23 = lhs->m.e21 * rhs->m.e13 + lhs->m.e22 * rhs->m.e23 + lhs->m.e23 * rhs->m.e33;
 
-    m.e21 = lhs->m.e21 * rhs->m.e11 + lhs->m.e22 * rhs->m.e21 + lhs->m.e23 * rhs->m.e31;
-    m.e22 = lhs->m.e21 * rhs->m.e12 + lhs->m.e22 * rhs->m.e22 + lhs->m.e23 * rhs->m.e32;
-    m.e23 = lhs->m.e21 * rhs->m.e13 + lhs->m.e22 * rhs->m.e23 + lhs->m.e23 * rhs->m.e33;
-
-    m.e31 = lhs->m.e31 * rhs->m.e11 + lhs->m.e32 * rhs->m.e21 + lhs->m.e33 * rhs->m.e31;
-    m.e32 = lhs->m.e31 * rhs->m.e12 + lhs->m.e32 * rhs->m.e22 + lhs->m.e33 * rhs->m.e32;
-    m.e33 = lhs->m.e31 * rhs->m.e13 + lhs->m.e32 * rhs->m.e23 + lhs->m.e33 * rhs->m.e33;
+  m.e31 = lhs->m.e31 * rhs->m.e11 + lhs->m.e32 * rhs->m.e21 + lhs->m.e33 * rhs->m.e31;
+  m.e32 = lhs->m.e31 * rhs->m.e12 + lhs->m.e32 * rhs->m.e22 + lhs->m.e33 * rhs->m.e32;
+  m.e33 = lhs->m.e31 * rhs->m.e13 + lhs->m.e32 * rhs->m.e23 + lhs->m.e33 * rhs->m.e33;
 }

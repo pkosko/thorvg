@@ -19,10 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include <fstream>
-#include <string.h>
-#include "tvgLoaderMgr.h"
 #include "tvgRawLoader.h"
+#include <string.h>
+#include <fstream>
+#include "tvgLoaderMgr.h"
 
 /************************************************************************/
 /* Internal Class Implementation                                        */
@@ -32,53 +32,41 @@
 /* External Class Implementation                                        */
 /************************************************************************/
 
-RawLoader::RawLoader()
-{
-
+RawLoader::RawLoader() {
 }
 
-
-RawLoader::~RawLoader()
-{
-    if (copy && content) {
-        free((void*)content);
-        content = nullptr;
-    }
+RawLoader::~RawLoader() {
+  if (copy && content) {
+    free((void*)content);
+    content = nullptr;
+  }
 }
 
+bool RawLoader::open(const uint32_t* data, uint32_t w, uint32_t h, bool copy) {
+  if (!data || w == 0 || h == 0) return false;
 
-bool RawLoader::open(const uint32_t* data, uint32_t w, uint32_t h, bool copy)
-{
-    if (!data || w == 0 || h == 0) return false;
+  vw = w;
+  vh = h;
 
-    vw = w;
-    vh = h;
+  this->copy = copy;
+  if (copy) {
+    content = (uint32_t*)malloc(sizeof(uint32_t) * vw * vh);
+    if (!content) return false;
+    memcpy((void*)content, data, sizeof(uint32_t) * vw * vh);
+  } else
+    content = data;
 
-    this->copy = copy;
-    if (copy) {
-        content = (uint32_t*)malloc(sizeof(uint32_t) * vw * vh);
-        if (!content) return false;
-        memcpy((void*)content, data, sizeof(uint32_t) * vw * vh);
-    }
-    else content = data;
-
-    return true;
+  return true;
 }
 
-
-bool RawLoader::read()
-{
-    return true;
+bool RawLoader::read() {
+  return true;
 }
 
-
-bool RawLoader::close()
-{
-    return true;
+bool RawLoader::close() {
+  return true;
 }
 
-
-const uint32_t* RawLoader::pixels()
-{
-    return this->content;
+const uint32_t* RawLoader::pixels() {
+  return this->content;
 }

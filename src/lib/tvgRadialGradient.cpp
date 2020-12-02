@@ -26,66 +26,54 @@
 /* Internal Class Implementation                                        */
 /************************************************************************/
 
-struct RadialGradient::Impl
-{
-    float cx = 0;
-    float cy = 0;
-    float radius = 0;
+struct RadialGradient::Impl {
+  float cx = 0;
+  float cy = 0;
+  float radius = 0;
 
-    Fill* duplicate()
-    {
-        auto ret = RadialGradient::gen();
-        if (!ret) return nullptr;
+  Fill* duplicate() {
+    auto ret = RadialGradient::gen();
+    if (!ret) return nullptr;
 
-        ret->pImpl->cx = cx;
-        ret->pImpl->cy = cy;
-        ret->pImpl->radius = radius;
+    ret->pImpl->cx = cx;
+    ret->pImpl->cy = cy;
+    ret->pImpl->radius = radius;
 
-        return ret.release();
-    }
+    return ret.release();
+  }
 };
-
 
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
-RadialGradient::RadialGradient():pImpl(new Impl())
-{
-    _id = FILL_ID_RADIAL;
-    Fill::pImpl->method(new FillDup<RadialGradient::Impl>(pImpl));
+RadialGradient::RadialGradient() : pImpl(new Impl()) {
+  _id = FILL_ID_RADIAL;
+  Fill::pImpl->method(new FillDup<RadialGradient::Impl>(pImpl));
 }
 
-
-RadialGradient::~RadialGradient()
-{
-    delete(pImpl);
+RadialGradient::~RadialGradient() {
+  delete (pImpl);
 }
 
+Result RadialGradient::radial(float cx, float cy, float radius) noexcept {
+  if (radius < 0) return Result::InvalidArguments;
 
-Result RadialGradient::radial(float cx, float cy, float radius) noexcept
-{
-    if (radius < 0) return Result::InvalidArguments;
+  pImpl->cx = cx;
+  pImpl->cy = cy;
+  pImpl->radius = radius;
 
-    pImpl->cx = cx;
-    pImpl->cy = cy;
-    pImpl->radius = radius;
-
-    return Result::Success;
+  return Result::Success;
 }
 
+Result RadialGradient::radial(float* cx, float* cy, float* radius) const noexcept {
+  if (cx) *cx = pImpl->cx;
+  if (cy) *cy = pImpl->cy;
+  if (radius) *radius = pImpl->radius;
 
-Result RadialGradient::radial(float* cx, float* cy, float* radius) const noexcept
-{
-    if (cx) *cx = pImpl->cx;
-    if (cy) *cy = pImpl->cy;
-    if (radius) *radius = pImpl->radius;
-
-    return Result::Success;
+  return Result::Success;
 }
 
-
-unique_ptr<RadialGradient> RadialGradient::gen() noexcept
-{
-    return unique_ptr<RadialGradient>(new RadialGradient);
+unique_ptr<RadialGradient> RadialGradient::gen() noexcept {
+  return unique_ptr<RadialGradient>(new RadialGradient);
 }

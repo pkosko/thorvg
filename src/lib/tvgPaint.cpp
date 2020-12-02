@@ -25,81 +25,60 @@
 /* Internal Class Implementation                                        */
 /************************************************************************/
 
-Paint :: Paint() : pImpl(new Impl())
-{
+Paint::Paint() : pImpl(new Impl()) {
 }
 
-
-Paint :: ~Paint()
-{
-    delete(pImpl);
+Paint::~Paint() {
+  delete (pImpl);
 }
-
 
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
-Result Paint::rotate(float degree) noexcept
-{
-    if (pImpl->rotate(degree)) return Result::Success;
-    return Result::FailedAllocation;
+Result Paint::rotate(float degree) noexcept {
+  if (pImpl->rotate(degree)) return Result::Success;
+  return Result::FailedAllocation;
 }
 
-
-Result Paint::scale(float factor) noexcept
-{
-    if (pImpl->scale(factor)) return Result::Success;
-    return Result::FailedAllocation;
+Result Paint::scale(float factor) noexcept {
+  if (pImpl->scale(factor)) return Result::Success;
+  return Result::FailedAllocation;
 }
 
-
-Result Paint::translate(float x, float y) noexcept
-{
-    if (pImpl->translate(x, y)) return Result::Success;
-    return Result::FailedAllocation;
+Result Paint::translate(float x, float y) noexcept {
+  if (pImpl->translate(x, y)) return Result::Success;
+  return Result::FailedAllocation;
 }
 
-
-Result Paint::transform(const Matrix& m) noexcept
-{
-    if (pImpl->transform(m)) return Result::Success;
-    return Result::FailedAllocation;
+Result Paint::transform(const Matrix& m) noexcept {
+  if (pImpl->transform(m)) return Result::Success;
+  return Result::FailedAllocation;
 }
 
-
-Result Paint::bounds(float* x, float* y, float* w, float* h) const noexcept
-{
-    if (pImpl->bounds(x, y, w, h)) return Result::Success;
-    return Result::InsufficientCondition;
+Result Paint::bounds(float* x, float* y, float* w, float* h) const noexcept {
+  if (pImpl->bounds(x, y, w, h)) return Result::Success;
+  return Result::InsufficientCondition;
 }
 
-
-Paint* Paint::duplicate() const noexcept
-{
-    return pImpl->duplicate();
+Paint* Paint::duplicate() const noexcept {
+  return pImpl->duplicate();
 }
 
-
-Result Paint::composite(std::unique_ptr<Paint> target, CompositeMethod method) const noexcept
-{
-    if (pImpl->composite(target.release(), method)) return Result::Success;
-    return Result::InsufficientCondition;
+Result Paint::composite(std::unique_ptr<Paint> target, CompositeMethod method) const noexcept {
+  if (pImpl->composite(target.release(), method)) return Result::Success;
+  return Result::InsufficientCondition;
 }
 
+Result Paint::opacity(uint8_t o) noexcept {
+  if (pImpl->opacity == o) return Result::Success;
 
-Result Paint::opacity(uint8_t o) noexcept
-{
-    if (pImpl->opacity == o) return Result::Success;
+  pImpl->opacity = o;
+  pImpl->flag |= RenderUpdateFlag::Color;
 
-    pImpl->opacity = o;
-    pImpl->flag |= RenderUpdateFlag::Color;
-
-    return Result::Success;
+  return Result::Success;
 }
 
-
-uint8_t Paint::opacity() const noexcept
-{
-    return pImpl->opacity;
+uint8_t Paint::opacity() const noexcept {
+  return pImpl->opacity;
 }

@@ -22,61 +22,56 @@
 #include "tvgCanvasImpl.h"
 
 #ifdef THORVG_SW_RASTER_SUPPORT
-    #include "tvgSwRenderer.h"
+#include "tvgSwRenderer.h"
 #else
-    class SwRenderer : public RenderMethod
-    {
-        //Non Supported. Dummy Class */
-    };
+class SwRenderer : public RenderMethod {
+  // Non Supported. Dummy Class */
+};
 #endif
 
 /************************************************************************/
 /* Internal Class Implementation                                        */
 /************************************************************************/
 
-struct SwCanvas::Impl
-{
-};
-
+struct SwCanvas::Impl {};
 
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
 #ifdef THORVG_SW_RASTER_SUPPORT
-SwCanvas::SwCanvas() : Canvas(SwRenderer::gen()), pImpl(new Impl)
+SwCanvas::SwCanvas()
+    : Canvas(SwRenderer::gen()),
+      pImpl(new Impl)
 #else
-SwCanvas::SwCanvas() : Canvas(nullptr), pImpl(new Impl)
+SwCanvas::SwCanvas()
+    : Canvas(nullptr),
+      pImpl(new Impl)
 #endif
 {
 }
 
-
-SwCanvas::~SwCanvas()
-{
-    delete(pImpl);
+SwCanvas::~SwCanvas() {
+  delete (pImpl);
 }
 
-
-Result SwCanvas::target(uint32_t* buffer, uint32_t stride, uint32_t w, uint32_t h, Colorspace cs) noexcept
-{
+Result SwCanvas::target(uint32_t* buffer, uint32_t stride, uint32_t w, uint32_t h,
+                        Colorspace cs) noexcept {
 #ifdef THORVG_SW_RASTER_SUPPORT
-    //We know renderer type, avoid dynamic_cast for performance.
-    auto renderer = static_cast<SwRenderer*>(Canvas::pImpl->renderer);
-    if (!renderer) return Result::MemoryCorruption;
+  // We know renderer type, avoid dynamic_cast for performance.
+  auto renderer = static_cast<SwRenderer*>(Canvas::pImpl->renderer);
+  if (!renderer) return Result::MemoryCorruption;
 
-    if (!renderer->target(buffer, stride, w, h, cs)) return Result::InvalidArguments;
+  if (!renderer->target(buffer, stride, w, h, cs)) return Result::InvalidArguments;
 
-    return Result::Success;
+  return Result::Success;
 #endif
-    return Result::NonSupport;
+  return Result::NonSupport;
 }
 
-
-unique_ptr<SwCanvas> SwCanvas::gen() noexcept
-{
+unique_ptr<SwCanvas> SwCanvas::gen() noexcept {
 #ifdef THORVG_SW_RASTER_SUPPORT
-    return unique_ptr<SwCanvas>(new SwCanvas);
+  return unique_ptr<SwCanvas>(new SwCanvas);
 #endif
-    return nullptr;
+  return nullptr;
 }

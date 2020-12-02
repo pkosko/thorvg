@@ -22,7 +22,7 @@
 #include "tvgLoaderMgr.h"
 
 #ifdef THORVG_SVG_LOADER_SUPPORT
-    #include "tvgSvgLoader.h"
+#include "tvgSvgLoader.h"
 #endif
 #include "tvgRawLoader.h"
 
@@ -32,88 +32,71 @@
 
 static int initCnt = 0;
 
-
-static Loader* _find(FileType type)
-{
-    switch(type) {
-        case FileType::Svg: {
+static Loader* _find(FileType type) {
+  switch (type) {
+    case FileType::Svg: {
 #ifdef THORVG_SVG_LOADER_SUPPORT
-            return new SvgLoader;
+      return new SvgLoader;
 #endif
-            break;
-        }
-        case FileType::Raw: {
-            return new RawLoader;
-            break;
-        }
-        default: {
-            break;
-        }
+      break;
     }
-    return nullptr;
+    case FileType::Raw: {
+      return new RawLoader;
+      break;
+    }
+    default: { break; }
+  }
+  return nullptr;
 }
 
-
-static Loader* _find(const string& path)
-{
-    auto ext = path.substr(path.find_last_of(".") + 1);
-    if (!ext.compare("svg")) return _find(FileType::Svg);
-    return nullptr;
+static Loader* _find(const string& path) {
+  auto ext = path.substr(path.find_last_of(".") + 1);
+  if (!ext.compare("svg")) return _find(FileType::Svg);
+  return nullptr;
 }
-
 
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
+bool LoaderMgr::init() {
+  if (initCnt > 0) return true;
+  ++initCnt;
 
-bool LoaderMgr::init()
-{
-    if (initCnt > 0) return true;
-    ++initCnt;
+  // TODO:
 
-    //TODO:
-
-    return true;
+  return true;
 }
 
+bool LoaderMgr::term() {
+  --initCnt;
+  if (initCnt > 0) return true;
 
-bool LoaderMgr::term()
-{
-    --initCnt;
-    if (initCnt > 0) return true;
+  // TODO:
 
-    //TODO:
-
-    return true;
+  return true;
 }
 
+unique_ptr<Loader> LoaderMgr::loader(const string& path) {
+  auto loader = _find(path);
 
-unique_ptr<Loader> LoaderMgr::loader(const string& path)
-{
-    auto loader = _find(path);
+  if (loader && loader->open(path)) return unique_ptr<Loader>(loader);
 
-    if (loader && loader->open(path)) return unique_ptr<Loader>(loader);
-
-    return nullptr;
+  return nullptr;
 }
 
-
-unique_ptr<Loader> LoaderMgr::loader(const char* data, uint32_t size)
-{
-    for (int i = 0; i < static_cast<int>(FileType::Unknown); i++) {
-        auto loader = _find(static_cast<FileType>(i));
-        if (loader && loader->open(data, size)) return unique_ptr<Loader>(loader);
-    }
-    return nullptr;
+unique_ptr<Loader> LoaderMgr::loader(const char* data, uint32_t size) {
+  for (int i = 0; i < static_cast<int>(FileType::Unknown); i++) {
+    auto loader = _find(static_cast<FileType>(i));
+    if (loader && loader->open(data, size)) return unique_ptr<Loader>(loader);
+  }
+  return nullptr;
 }
 
-
-unique_ptr<Loader> LoaderMgr::loader(uint32_t *data, uint32_t w, uint32_t h, bool copy)
-{
-    for (int i = 0; i < static_cast<int>(FileType::Unknown); i++) {
-        auto loader = _find(static_cast<FileType>(i));
-        if (loader && loader->open(data, w, h, copy)) return unique_ptr<Loader>(loader);
-    }
-    return nullptr;
+unique_ptr<Loader> LoaderMgr::loader(uint32_t* data, uint32_t w, uint32_t h, bool copy) {
+  for (int i = 0; i < static_cast<int>(FileType::Unknown); i++) {
+    auto loader = _find(static_cast<FileType>(i));
+    if (loader && loader->open(data, w, h, copy)) return unique_ptr<Loader>(loader);
+  }
+  return nullptr;
 }

@@ -29,85 +29,81 @@
 /* Internal Class Implementation                                        */
 /************************************************************************/
 
-struct Scene::Impl
-{
-    vector<Paint*> paints;
+struct Scene::Impl {
+  vector<Paint*> paints;
 
-    bool dispose(RenderMethod& renderer)
-    {
-        for (auto paint : paints) {
-            paint->pImpl->dispose(renderer);
-            delete(paint);
-        }
-        paints.clear();
+  bool dispose(RenderMethod& renderer) {
+    for (auto paint : paints) {
+      paint->pImpl->dispose(renderer);
+      delete (paint);
+    }
+    paints.clear();
 
-        return true;
+    return true;
+  }
+
+  void* update(RenderMethod& renderer, const RenderTransform* transform, uint32_t opacity,
+               vector<Composite>& compList, RenderUpdateFlag flag) {
+    /* FXIME: it requires to return list of childr engine data
+       This is necessary for scene composition */
+    void* edata = nullptr;
+
+    for (auto paint : paints) {
+      edata =
+          paint->pImpl->update(renderer, transform, opacity, compList, static_cast<uint32_t>(flag));
+    }
+    return edata;
+  }
+
+  bool render(RenderMethod& renderer) {
+    for (auto paint : paints) {
+      if (!paint->pImpl->render(renderer)) return false;
+    }
+    return true;
+  }
+
+  bool bounds(float* px, float* py, float* pw, float* ph) {
+    auto x = FLT_MAX;
+    auto y = FLT_MAX;
+    auto w = 0.0f;
+    auto h = 0.0f;
+
+    for (auto paint : paints) {
+      auto x2 = FLT_MAX;
+      auto y2 = FLT_MAX;
+      auto w2 = 0.0f;
+      auto h2 = 0.0f;
+
+      if (!paint->pImpl->bounds(&x2, &y2, &w2, &h2)) continue;
+
+      // Merge regions
+      if (x2 < x) x = x2;
+      if (x + w < x2 + w2) w = (x2 + w2) - x;
+      if (y2 < y) y = y2;
+      if (y + h < y2 + h2) h = (y2 + h2) - y;
     }
 
-    void* update(RenderMethod &renderer, const RenderTransform* transform, uint32_t opacity, vector<Composite>& compList, RenderUpdateFlag flag)
-    {
-        /* FXIME: it requires to return list of childr engine data
-           This is necessary for scene composition */
-        void* edata = nullptr;
+    if (px) *px = x;
+    if (py) *py = y;
+    if (pw) *pw = w;
+    if (ph) *ph = h;
 
-        for (auto paint : paints) {
-            edata = paint->pImpl->update(renderer, transform, opacity, compList, static_cast<uint32_t>(flag));
-        }
-        return edata;
+    return true;
+  }
+
+  Paint* duplicate() {
+    auto ret = Scene::gen();
+    if (!ret) return nullptr;
+    auto dup = ret.get()->pImpl;
+
+    dup->paints.reserve(paints.size());
+
+    for (auto paint : paints) {
+      dup->paints.push_back(paint->duplicate());
     }
 
-    bool render(RenderMethod &renderer)
-    {
-        for (auto paint : paints) {
-            if (!paint->pImpl->render(renderer)) return false;
-        }
-        return true;
-    }
-
-    bool bounds(float* px, float* py, float* pw, float* ph)
-    {
-        auto x = FLT_MAX;
-        auto y = FLT_MAX;
-        auto w = 0.0f;
-        auto h = 0.0f;
-
-        for (auto paint : paints) {
-            auto x2 = FLT_MAX;
-            auto y2 = FLT_MAX;
-            auto w2 = 0.0f;
-            auto h2 = 0.0f;
-
-            if (!paint->pImpl->bounds(&x2, &y2, &w2, &h2)) continue;
-
-            //Merge regions
-            if (x2 < x) x = x2;
-            if (x + w < x2 + w2) w = (x2 + w2) - x;
-            if (y2 < y) y = y2;
-            if (y + h < y2 + h2) h = (y2 + h2) - y;
-        }
-
-        if (px) *px = x;
-        if (py) *py = y;
-        if (pw) *pw = w;
-        if (ph) *ph = h;
-
-        return true;
-    }
-
-    Paint* duplicate()
-    {
-        auto ret = Scene::gen();
-        if (!ret) return nullptr;
-        auto dup = ret.get()->pImpl;
-
-        dup->paints.reserve(paints.size());
-
-        for (auto paint : paints) {
-            dup->paints.push_back(paint->duplicate());
-        }
-
-        return ret.release();
-    }
+    return ret.release();
+  }
 };
 
-#endif //_TVG_SCENE_IMPL_H_
+#endif  //_TVG_SCENE_IMPL_H_

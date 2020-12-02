@@ -20,17 +20,16 @@
  * SOFTWARE.
  */
 #include "tvgCommon.h"
-#include "tvgTaskScheduler.h"
 #include "tvgLoaderMgr.h"
+#include "tvgTaskScheduler.h"
 
 #ifdef THORVG_SW_RASTER_SUPPORT
-    #include "tvgSwRenderer.h"
+#include "tvgSwRenderer.h"
 #endif
 
 #ifdef THORVG_GL_RASTER_SUPPORT
-    #include "tvgGlRenderer.h"
+#include "tvgGlRenderer.h"
 #endif
-
 
 /************************************************************************/
 /* Internal Class Implementation                                        */
@@ -41,65 +40,62 @@ static bool initialized = false;
 /* External Class Implementation                                        */
 /************************************************************************/
 
-Result Initializer::init(CanvasEngine engine, uint32_t threads) noexcept
-{
-    if (initialized) return Result::InsufficientCondition;
+Result Initializer::init(CanvasEngine engine, uint32_t threads) noexcept {
+  if (initialized) return Result::InsufficientCondition;
 
-    auto nonSupport = true;
+  auto nonSupport = true;
 
-    if (static_cast<uint32_t>(engine) & static_cast<uint32_t>(CanvasEngine::Sw)) {
-        #ifdef THORVG_SW_RASTER_SUPPORT
-            if (!SwRenderer::init(threads)) return Result::InsufficientCondition;
-            nonSupport = false;
-        #endif
-    } else if (static_cast<uint32_t>(engine) & static_cast<uint32_t>(CanvasEngine::Gl)) {
-        #ifdef THORVG_GL_RASTER_SUPPORT
-            if (!GlRenderer::init(threads)) return Result::InsufficientCondition;
-            nonSupport = false;
-        #endif
-    } else {
-        return Result::InvalidArguments;
-    }
+  if (static_cast<uint32_t>(engine) & static_cast<uint32_t>(CanvasEngine::Sw)) {
+#ifdef THORVG_SW_RASTER_SUPPORT
+    if (!SwRenderer::init(threads)) return Result::InsufficientCondition;
+    nonSupport = false;
+#endif
+  } else if (static_cast<uint32_t>(engine) & static_cast<uint32_t>(CanvasEngine::Gl)) {
+#ifdef THORVG_GL_RASTER_SUPPORT
+    if (!GlRenderer::init(threads)) return Result::InsufficientCondition;
+    nonSupport = false;
+#endif
+  } else {
+    return Result::InvalidArguments;
+  }
 
-    if (nonSupport) return Result::NonSupport;
+  if (nonSupport) return Result::NonSupport;
 
-    if (!LoaderMgr::init()) return Result::Unknown;
+  if (!LoaderMgr::init()) return Result::Unknown;
 
-    TaskScheduler::init(threads);
+  TaskScheduler::init(threads);
 
-    initialized = true;
+  initialized = true;
 
-    return Result::Success;
+  return Result::Success;
 }
 
+Result Initializer::term(CanvasEngine engine) noexcept {
+  if (!initialized) return Result::InsufficientCondition;
 
-Result Initializer::term(CanvasEngine engine) noexcept
-{
-    if (!initialized) return Result::InsufficientCondition;
+  auto nonSupport = true;
 
-    auto nonSupport = true;
+  if (static_cast<uint32_t>(engine) & static_cast<uint32_t>(CanvasEngine::Sw)) {
+#ifdef THORVG_SW_RASTER_SUPPORT
+    if (!SwRenderer::term()) return Result::InsufficientCondition;
+    nonSupport = false;
+#endif
+  } else if (static_cast<uint32_t>(engine) & static_cast<uint32_t>(CanvasEngine::Gl)) {
+#ifdef THORVG_GL_RASTER_SUPPORT
+    if (!GlRenderer::term()) return Result::InsufficientCondition;
+    nonSupport = false;
+#endif
+  } else {
+    return Result::InvalidArguments;
+  }
 
-    if (static_cast<uint32_t>(engine) & static_cast<uint32_t>(CanvasEngine::Sw)) {
-        #ifdef THORVG_SW_RASTER_SUPPORT
-            if (!SwRenderer::term()) return Result::InsufficientCondition;
-            nonSupport = false;
-        #endif
-    } else if (static_cast<uint32_t>(engine) & static_cast<uint32_t>(CanvasEngine::Gl)) {
-        #ifdef THORVG_GL_RASTER_SUPPORT
-            if (!GlRenderer::term()) return Result::InsufficientCondition;
-            nonSupport = false;
-        #endif
-    } else {
-        return Result::InvalidArguments;
-    }
+  if (nonSupport) return Result::NonSupport;
 
-    if (nonSupport) return Result::NonSupport;
+  TaskScheduler::term();
 
-    TaskScheduler::term();
+  if (!LoaderMgr::term()) return Result::Unknown;
 
-    if (!LoaderMgr::term()) return Result::Unknown;
+  initialized = false;
 
-    initialized = false;
-
-    return Result::Success;
+  return Result::Success;
 }

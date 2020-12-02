@@ -25,33 +25,35 @@
 
 #include "tvgGlRenderTask.h"
 
-class GlRenderer : public RenderMethod
-{
-public:
-    Surface surface = {nullptr, 0, 0, 0};
+class GlRenderer : public RenderMethod {
+ public:
+  Surface surface = {nullptr, 0, 0, 0};
 
-    void* prepare(const Shape& shape, void* data, const RenderTransform* transform, uint32_t opacity, vector<Composite>& compList, RenderUpdateFlag flags) override;
-    bool dispose(void *data) override;
-    bool preRender() override;
-    bool render(const Shape& shape, void *data) override;
-    bool postRender() override;
-    bool target(uint32_t* buffer, uint32_t stride, uint32_t w, uint32_t h);
-    bool sync() override;
-    bool clear() override;
+  void* prepare(const Shape& shape, void* data, const RenderTransform* transform, uint32_t opacity,
+                vector<Composite>& compList, RenderUpdateFlag flags) override;
+  bool dispose(void* data) override;
+  bool preRender() override;
+  bool render(const Shape& shape, void* data) override;
+  bool postRender() override;
+  bool target(uint32_t* buffer, uint32_t stride, uint32_t w, uint32_t h);
+  bool sync() override;
+  bool clear() override;
 
-    static GlRenderer* gen();
-    static int init(TVG_UNUSED uint32_t threads);
-    static int term();
+  static GlRenderer* gen();
+  static int init(TVG_UNUSED uint32_t threads);
+  static int term();
 
-private:
-    GlRenderer(){};
-    ~GlRenderer();
+ private:
+  GlRenderer(){};
+  ~GlRenderer();
 
-    void initShaders();
-    void drawPrimitive(GlShape& sdata, uint8_t r, uint8_t g, uint8_t b, uint8_t a, uint32_t primitiveIndex, RenderUpdateFlag flag);
-    void drawPrimitive(GlShape& sdata, const Fill* fill, uint32_t primitiveIndex, RenderUpdateFlag flag);
+  void initShaders();
+  void drawPrimitive(GlShape& sdata, uint8_t r, uint8_t g, uint8_t b, uint8_t a,
+                     uint32_t primitiveIndex, RenderUpdateFlag flag);
+  void drawPrimitive(GlShape& sdata, const Fill* fill, uint32_t primitiveIndex,
+                     RenderUpdateFlag flag);
 
-    vector<shared_ptr<GlRenderTask>>  mRenderTasks;
+  vector<shared_ptr<GlRenderTask>> mRenderTasks;
 };
 
 #endif /* _TVG_GL_RENDERER_H_ */
